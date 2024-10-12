@@ -77,7 +77,7 @@ func (s *Server) RenderContent(data interface{}) (template.HTML, error) {
 	d, ok := data.(RenderData)
 	if !ok {
 		// Return an error if the data type is invalid
-		return "", fmt.Errorf("invalid data type: %s", data)
+		return "", fmt.Errorf("invalid data type: %T", data)
 	}
 
 	// Extract the context from the data
