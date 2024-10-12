@@ -110,7 +110,7 @@
                     <td class="py-1 px-4 font-normal">
                         <div class="thumbnail-container">
                             <a href="#" hx-get="/detections/details?id={{.ID}}" hx-target="#mainContent" hx-swap="innerHTML" hx-trigger="click" hx-push-url="true">
-                                <img loading="lazy" width="150" src="{{thumbnail .ScientificName}}" class="h-auto rounded-md">
+                                <img loading="lazy" width="150" src="{{thumbnail .ScientificName}}" alt="Thumbnail of {{.CommonName}}" class="h-auto rounded-md">
                             </a>
                             <div class="thumbnail-tooltip hidden">
                                 {{thumbnailAttribution .ScientificName}}
