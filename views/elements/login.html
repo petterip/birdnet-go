@@ -1,0 +1,32 @@
+{{define "login"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to BirdNET-Go</title>
+    <link href="/assets/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="px-8 py-6 mt-4 text-left bg-white shadow-lg">
+            <h3 class="text-2xl font-bold text-center">Login to BirdNET-Go</h3>
+            {{if .Error}}
+                <div class="text-red-500 text-center mt-2">{{.Error}}</div>
+            {{end}}
+            <form action="/login" method="POST" class="mt-4">
+                <div>
+                    <label class="block" for="password">Password</label>
+                    <input type="password" placeholder="Password" id="password" name="password"
+                           class="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600">
+                </div>
+                <div class="flex items-baseline justify-between">
+                    <button type="submit" class="px-6 py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-900">Login</button>
+                </div>
+                <input type="hidden" name="redirect" value="{{.RedirectURL}}">
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+{{end}}

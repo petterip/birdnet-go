@@ -157,4 +157,13 @@ func setDefaultConfig() {
 	viper.SetDefault("output.mysql.database", "birdnet")
 	viper.SetDefault("output.mysql.host", "localhost")
 	viper.SetDefault("output.mysql.port", 3306)
+
+	// OAuth defaults
+	viper.SetDefault("oauth2.clientid", "birdnet-client")
+    viper.SetDefault("oauth2.clientsecret", "some-random-secret")
+    viper.SetDefault("oauth2.redirecturi", "http://localhost:8080/callback")
+    viper.SetDefault("oauth2.authcodeexp", "10m")
+    viper.SetDefault("oauth2.accesstokenexp", "1h")
+
+	viper.SetDefault("webserver.adminPassword", "change-me")
 }

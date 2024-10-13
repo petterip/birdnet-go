@@ -22,4 +22,4 @@ mic_to_use=$(dialog --clear --backtitle "Audio Device Selection" --title "Select
 selected_mic=${cards[mic_to_use - 1]}
 
 # Start dev server with selected mic
-make dev_server REALTIME_ARGS="--source ${selected_mic}"
+make dev_server REALTIME_ARGS="--source null" #${selected_mic}"

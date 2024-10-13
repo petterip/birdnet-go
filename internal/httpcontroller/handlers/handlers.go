@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"time"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,7 +16,10 @@ import (
 	"github.com/tphakala/birdnet-go/internal/imageprovider"
 	"github.com/tphakala/birdnet-go/internal/myaudio"
 	"github.com/tphakala/birdnet-go/internal/suncalc"
+    "github.com/tphakala/birdnet-go/internal/oauth2"
 )
+
+
 
 // Handlers embeds baseHandler and includes all the dependencies needed for the application handlers.
 type Handlers struct {
@@ -27,6 +31,7 @@ type Handlers struct {
 	SSE               *SSEHandler                 // Server Side Events handler
 	SunCalc           *suncalc.SunCalc            // SunCalc instance for calculating sun event times
 	AudioLevelChan    chan myaudio.AudioLevelData // Channel for audio level updates
+    OAuth2Server      *oauth2.OAuth2Server
 }
 
 // HandlerError is a custom error type that includes an HTTP status code and a user-friendly message.
@@ -73,6 +78,9 @@ func New(ds datastore.Interface, settings *conf.Settings, dashboardSettings *con
 	if logger == nil {
 		logger = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 	}
+
+    oauth2Server := oauth2.NewOAuth2Server(settings)
+
 	return &Handlers{
 		baseHandler: baseHandler{
 			errorHandler: defaultErrorHandler,
@@ -85,6 +93,7 @@ func New(ds datastore.Interface, settings *conf.Settings, dashboardSettings *con
 		SSE:               NewSSEHandler(),
 		SunCalc:           sunCalc,
 		AudioLevelChan:    audioLevelChan,
+        OAuth2Server:      oauth2Server,
 	}
 }
 
@@ -217,4 +226,70 @@ func (h *Handlers) AudioLevelSSE(c echo.Context) error {
 			c.Response().Flush()
 		}
 	}
+}
+
+func (h *Handlers) HandleAuthorize(c echo.Context) error {
+    clientID := c.QueryParam("client_id")
+    redirectURI := c.QueryParam("redirect_uri")
+    
+    if clientID != h.Settings.OAuth2.ClientID || redirectURI != h.Settings.OAuth2.RedirectURI {
+        return c.String(http.StatusBadRequest, "Invalid client_id or redirect_uri")
+    }
+
+    // In a real-world scenario, you'd typically show a login page here
+    // For simplicity, we're auto-generating an auth code
+    authCode, err := h.OAuth2Server.GenerateAuthCode()
+    if err != nil {
+        return c.String(http.StatusInternalServerError, "Error generating auth code")
+    }
+
+    return c.Redirect(http.StatusFound, redirectURI + "?code=" + authCode)
+}
+
+func (h *Handlers) HandleToken(c echo.Context) error {
+    grantType := c.FormValue("grant_type")
+    code := c.FormValue("code")
+    clientID := c.FormValue("client_id")
+    clientSecret := c.FormValue("client_secret")
+
+    if grantType != "authorization_code" || clientID != h.Settings.OAuth2.ClientID || clientSecret != h.Settings.OAuth2.ClientSecret {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid_request"})
+    }
+
+    accessToken, err := h.OAuth2Server.ExchangeAuthCode(code)
+    if err != nil {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid_grant"})
+    }
+
+    return c.JSON(http.StatusOK, map[string]string{
+        "access_token": accessToken,
+        "token_type": "Bearer",
+        "expires_in": h.Settings.OAuth2.AccessTokenExp.String(),
+    })
+}
+
+func (h *Handlers) HandleOAuth2Callback(c echo.Context) error {
+    code := c.QueryParam("code")
+    if code == "" {
+        return c.String(http.StatusBadRequest, "Missing authorization code")
+    }
+
+    // Exchange the authorization code for an access token
+    accessToken, err := h.OAuth2Server.ExchangeAuthCode(code)
+    if err != nil {
+        return c.String(http.StatusInternalServerError, "Failed to exchange authorization code")
+    }
+
+    // Set the access token in a secure HTTP-only cookie
+    cookie := new(http.Cookie)
+    cookie.Name = "access_token"
+    cookie.Value = accessToken
+    cookie.Expires = time.Now().Add(h.Settings.OAuth2.AccessTokenExp)
+    cookie.Path = "/"
+    cookie.HttpOnly = true
+    cookie.Secure = true // Set to true if using HTTPS
+    c.SetCookie(cookie)
+
+    // Redirect to the settings page
+    return c.Redirect(http.StatusFound, "/settings/main")
 }

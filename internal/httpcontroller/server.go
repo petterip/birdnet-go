@@ -11,6 +11,7 @@ import (
 	"github.com/tphakala/birdnet-go/internal/datastore"
 	"github.com/tphakala/birdnet-go/internal/httpcontroller/handlers"
 	"github.com/tphakala/birdnet-go/internal/imageprovider"
+	"github.com/tphakala/birdnet-go/internal/oauth2"
 	"github.com/tphakala/birdnet-go/internal/logger"
 	"github.com/tphakala/birdnet-go/internal/myaudio"
 	"github.com/tphakala/birdnet-go/internal/suncalc"
@@ -30,12 +31,16 @@ type Server struct {
 	partialRoutes     map[string]PartialRouteConfig
 	SunCalc           *suncalc.SunCalc            // SunCalc instance for calculating sun event times
 	AudioLevelChan    chan myaudio.AudioLevelData // Channel for audio level updates
+	OAuth2Server      *oauth2.OAuth2Server
 }
+
 
 // New initializes a new HTTP server with given context and datastore.
 func New(settings *conf.Settings, dataStore datastore.Interface, birdImageCache *imageprovider.BirdImageCache, audioLevelChan chan myaudio.AudioLevelData) *Server {
 	configureDefaultSettings(settings)
 
+    oauth2Server := oauth2.NewOAuth2Server(settings)
+    
 	s := &Server{
 		Echo:              echo.New(),
 		DS:                dataStore,
@@ -43,6 +48,7 @@ func New(settings *conf.Settings, dataStore datastore.Interface, birdImageCache 
 		BirdImageCache:    birdImageCache,
 		AudioLevelChan:    audioLevelChan,
 		DashboardSettings: &settings.Realtime.Dashboard,
+		OAuth2Server:      oauth2Server,
 	}
 
 	s.initLogger()
@@ -90,13 +96,36 @@ func (s *Server) Start() {
 	fmt.Printf("HTTP server started on port %s (AutoTLS: %v)\n", s.Settings.WebServer.Port, s.Settings.WebServer.AutoTLS)
 }
 
+func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+    return func(c echo.Context) error {
+        // Check if user is authenticated
+        // This could involve checking for a valid session or token
+        if !s.isAuthenticated(c) {
+            return c.Redirect(302, "/login")
+        }
+        return next(c)
+    }
+}
+
+func (s *Server) isAuthenticated(c echo.Context) bool {
+    // Implement your authentication check here
+    // This could involve checking a session, JWT token, etc.
+    return false // Replace with actual check
+}
+
 // initializeServer configures and initializes the server.
 func (s *Server) initializeServer() {
 	s.Echo.HideBanner = true
 	s.initLogger()
 	s.configureMiddleware()
 	s.initRoutes()
+
+    // Protect settings routes
+    settingsGroup := s.Echo.Group("/settings")
+    settingsGroup.Use(s.authMiddleware)
 }
+
+
 
 // configureDefaultSettings sets default values for server settings.
 func configureDefaultSettings(settings *conf.Settings) {

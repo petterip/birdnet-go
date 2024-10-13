@@ -24,48 +24,48 @@ func (ve ValidationError) Error() string {
 
 // ValidateSettings validates the entire Settings struct
 func ValidateSettings(settings *Settings) error {
-	ve := ValidationError{}
+    ve := ValidationError{}
 
-	// Validate BirdNET settings
-	if err := validateBirdNETSettings(&settings.BirdNET); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate BirdNET settings
+    if err := validateBirdNETSettings(&settings.BirdNET); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// Validate OpenWeather settings
-	if err := validateOpenWeatherSettings(&settings.Realtime.OpenWeather); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate OpenWeather settings
+    if err := validateOpenWeatherSettings(&settings.Realtime.OpenWeather); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// Validate WebServer settings
-	if err := validateWebServerSettings(&settings.WebServer); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate WebServer settings
+    if err := validateWebServerSettings(&settings.WebServer); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// Validate Realtime settings
-	if err := validateRealtimeSettings(&settings.Realtime); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate Realtime settings
+    if err := validateRealtimeSettings(&settings.Realtime); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// Validate Birdweather settings
-	if err := validateBirdweatherSettings(&settings.Realtime.Birdweather); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate Birdweather settings
+    if err := validateBirdweatherSettings(&settings.Realtime.Birdweather); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// Validate Audio settings
-	if err := validateAudioSettings(&settings.Realtime.Audio); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate Audio settings
+    if err := validateAudioSettings(&settings.Realtime.Audio); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// Validate Dashboard settings
-	if err := validateDashboardSettings(&settings.Realtime.Dashboard); err != nil {
-		ve.Errors = append(ve.Errors, err.Error())
-	}
+    // Validate Dashboard settings
+    if err := validateDashboardSettings(&settings.Realtime.Dashboard); err != nil {
+        ve.Errors = append(ve.Errors, err.Error())
+    }
 
-	// If there are any errors, return the ValidationError
-	if len(ve.Errors) > 0 {
-		return ve
-	}
-	return nil
+    // If there are any errors, return the ValidationError
+    if len(ve.Errors) > 0 {
+        return ve
+    }
+    return nil
 }
 
 // validateBirdNETSettings validates the BirdNET-specific settings
@@ -150,19 +150,31 @@ func validateOpenWeatherSettings(settings *OpenWeatherSettings) error {
 
 // validateWebServerSettings validates the WebServer-specific settings
 func validateWebServerSettings(settings *struct {
-	Enabled bool
-	Port    string
-	AutoTLS bool
-	Log     LogConfig
+    Enabled       bool
+    Port          string
+    AutoTLS       bool
+    Log           LogConfig
+    AdminPassword string
 }) error {
-	if settings.Enabled {
-		// Check if port is provided when enabled
-		if settings.Port == "" {
-			return errors.New("WebServer port is required when enabled")
-		}
-		// You might want to add more specific port validation here
-	}
-	return nil
+    if settings.Enabled {
+        // Check if port is provided when enabled
+        if settings.Port == "" {
+            return errors.New("WebServer port is required when enabled")
+        }
+        // You might want to add more specific port validation here
+    }
+
+    // Validate AdminPassword
+    if settings.AdminPassword == "" {
+        return errors.New("WebServer AdminPassword is required")
+    }
+
+    // You might want to add more password strength validation here
+    if len(settings.AdminPassword) < 8 {
+        return errors.New("WebServer AdminPassword must be at least 8 characters long")
+    }
+
+    return nil
 }
 
 // validateRealtimeSettings validates the Realtime-specific settings

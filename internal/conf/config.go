@@ -220,6 +220,7 @@ type Settings struct {
 		Port    string    // port for web server
 		AutoTLS bool      // true to enable auto TLS
 		Log     LogConfig // logging configuration for web server
+		AdminPassword string
 	}
 
 	Output struct {
@@ -243,6 +244,14 @@ type Settings struct {
 			Port     string // port for mysql database
 		}
 	}
+
+	OAuth2 struct {
+        ClientID     string
+        ClientSecret string
+        RedirectURI  string
+        AuthCodeExp  time.Duration
+        AccessTokenExp time.Duration
+    }
 }
 
 // LogConfig defines the configuration for a log file

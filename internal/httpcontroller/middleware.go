@@ -1,6 +1,8 @@
 package httpcontroller
 
 import (
+	"log"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -9,6 +11,7 @@ import (
 
 // configureMiddleware sets up middleware for the server.
 func (s *Server) configureMiddleware() {
+	s.Echo.Use(s.AuthMiddleware)
 	s.Echo.Use(middleware.Recover())
 	s.Echo.Use(middleware.GzipWithConfig(middleware.GzipConfig{
 		Level:     6,
@@ -48,4 +51,30 @@ func VaryHeaderMiddleware() echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+
+func (s *Server) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+    return func(c echo.Context) error {
+        if isProtectedRoute(c.Path()) {
+            cookie, err := c.Cookie("access_token")
+            if err != nil || cookie.Value == "" {
+				log.Printf("*** No cookie - redirecting to %T", c.Request().URL.Path)
+				return c.Redirect(http.StatusFound, "/login?redirect=" + c.Request().URL.Path)
+				//return c.Redirect(http.StatusFound, "/oauth2/authorize?client_id=birdnet-client&redirect_uri=http://localhost:8080/callback")
+            }
+            
+            token := cookie.Value
+            if !s.Handlers.OAuth2Server.ValidateAccessToken(token) {
+				log.Printf("*** Invalid cookie - redirecting to %T", c.Request().URL.Path)
+				return c.Redirect(http.StatusFound, "/login?redirect=" + c.Request().URL.Path)
+				//return c.Redirect(http.StatusFound, "/oauth2/authorize?client_id=birdnet-client&redirect_uri=http://localhost:8080/callback")
+            }
+        }
+        return next(c)
+    }
+}
+
+func isProtectedRoute(path string) bool {
+    return strings.HasPrefix(path, "/settings/")
 }

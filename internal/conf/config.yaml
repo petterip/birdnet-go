@@ -69,7 +69,7 @@ realtime:
   rtsp:    
     transport: tcp        # RTSP Transport Protocol
     urls:                 # RTSP stream URLs
-      # - rtsp://user:password@example.com/stream1
+      - rtsp://rtsp-test-server.viomic.com:554/stream
       # - rtsp://user:password@example.com/stream2
       # - rtsp://user:password@example.com/stream3
   
@@ -114,6 +114,7 @@ webserver:
   enabled: true           # true to enable web server
   port: 8080              # port for web server
   autotls: false          # true to enable auto TLS
+  adminPassword: "change-me"
   log:
     enabled: false        # true to enable log file
     path: webui.log       # path to log file
