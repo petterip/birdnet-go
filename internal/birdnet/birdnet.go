@@ -94,18 +94,19 @@ func (bn *BirdNET) initializeModel() error {
 	// Determine the number of threads for the interpreter based on settings and system capacity.
 	threads := bn.determineThreadCount(bn.Settings.BirdNET.Threads)
 
-	// Configure interpreter options.
-	options := tflite.NewInterpreterOptions()
-	// Use XNNPACK delegate if enabled in settings
-	if bn.Settings.BirdNET.UseXNNPACK {
-		// Set XNNPACK threads to 1 less than configured threads but never less than 1
-		threads = max(1, threads-1)
-		options.AddDelegate(xnnpack.New(xnnpack.DelegateOptions{NumThreads: int32(threads)}))
-		// Set the interpreter to use only 1 thread
-		options.SetNumThread(1)
-	} else {
-		options.SetNumThread(threads)
-	}
+// Configure interpreter options.
+options := tflite.NewInterpreterOptions()
+// Use XNNPACK delegate if enabled in settings
+if bn.Settings.BirdNET.UseXNNPACK {
+	// Set XNNPACK threads to 1 less than configured threads but never less than 1
+	threads = max(1, threads-1)
+	options.AddDelegate(xnnpack.New(xnnpack.DelegateOptions{NumThreads: int32(threads)}))
+	// Set the interpreter to use only 1 thread
+	options.SetNumThread(1)
+} else {
+	options.SetNumThread(threads)
+}
+
 	options.SetErrorReporter(func(msg string, user_data interface{}) {
 		fmt.Println(msg)
 	}, nil)
